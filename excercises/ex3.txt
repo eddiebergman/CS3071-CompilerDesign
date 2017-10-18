@@ -1,0 +1,6 @@
+Exercise 3
+Modify the method CloseScope (in SymTab.cs) so that it adds comments to the file Tastier.s which, for each identifier found during the compilation of a program, describes the contents of the symbol table (eg its type and address).
+ 
+For example, when compiling the sample program TastierProgram.TAS, the identifiers Add, Subtract, SumUp and Main should be described as procedures; i should be described a global variable of type int and sum as a local variable of type int, etc.
+ 
+Note:   This exercise will not be graded, but please submit (using Blackboard) a brief report along with your modified version of the file SymTab.cs — this should be done before 10:00pm next Monday (16th October).

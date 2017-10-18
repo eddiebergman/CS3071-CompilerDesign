@@ -6,6 +6,7 @@ program Test {
    int i;
 
    void SumUp() {
+
       int j, sum;
       
       void Subtract() {
@@ -19,8 +20,25 @@ program Test {
             Add();
          }
       }
+
+      void Dummy() {
+          i := 3 < 4? 10 : 15;
+      }
+
+      void Dummy2(){
+          int x, y;
+          x := 30;
+          y := 40;
+          i := x < y? x+1 : y-1; 
+      }
+
+      void Dummy3(){
+          i := 3 < 4? 10: (2+3) < 6? 20 : 30;
+      }
+      
       
       j := i;
+
       sum := 0;
       Add();
       write "The sum of the values from 1 to ";

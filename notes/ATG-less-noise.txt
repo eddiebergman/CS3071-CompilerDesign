@@ -1,0 +1,64 @@
+==========
+TOKENS  --collections of characters that represent something
+==========
+  number = digit { digit }.
+  ident = letter { letter | digit }.
+  string = '"' {stringCh | '\\' printableCh} '"'.
+
+==========
+Base Productions -- have no non-terminals
+==========
+
+Ident = ident       //ident being a pointer to some 'thing' e.g. myVarName, myFunction
+
+String = string     //'what' "is" 'a' "String345"
+
+Type = ( "int" | "bool" )
+
+AddOp = ('+'|'-')
+
+MulOp = ('*' | ("div" | "DIV")  |  ("mod" | "MOD") )
+
+RelOp = ( "=" | '<' | '>' | "!=" | "<=" | ">=")
+
+============
+The Other Kind Of Productions  --have non-terminals within their production rules
+============
+
+
+Primary = ( Ident | number | 'true' | 'false' | '-'Primary |  '(' Expr ')' )
+
+
+VarDecl = Type Ident { ',' Ident } ';'   //int a;    bool b1, b2;
+
+
+Term = Primary { MulOp Primary } 
+
+
+SimExpr = Term { AddOp Term}
+
+Expr = SimExpr [RelOp SimExpr ['?' Expr ':' Expr ] ]
+
+ --something that evaluates to a bool?? 3 < 4
+
+
+ProcDecl = "void" Ident '()' '{'    //only void functions?
+                { VarDecl }         //optiona: Any amount of variable declerations
+                { ProcDecl }        //optional: Declare inner functions
+                Stat {Stat}         //Statement of some kind, followed by 0 or more Statements
+            '}'
+
+
+Stat =  Ident ( ":=" Expr ';'   |  "()" ';' )   //assignment or function call
+       |"if" Expr Stat [ "else" Stat ]          //if x Statement else Statement
+       |"while" Expr Stat
+       |"read" Ident ';'
+       |"write" ( Expr | String ) ';'
+       |"writeln" Expr ';'
+       |'{' {VarDecl} Stat {Stat} '}'             //Statement can be a 'scope'
+
+
+Tastier =   "program" Ident '{'                   //The entry Production?
+                {VarDecl}
+                {ProcDecl}
+            '}'

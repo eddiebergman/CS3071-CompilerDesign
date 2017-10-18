@@ -1,0 +1,11 @@
+Extend the programming language described by the attributed translation grammar for Tastier to include a conditional assignment statement of the form:
+
+       <identifier>:=<condition>?<expression1>:<expression2>
+
+for example
+
+       i:=x<y?x+1:y-1
+
+Hint: Study the assignment and if statements in the Tastier.ATG file and then design a regular expression describing the syntax of the conditional assignment statement. This exercise is all about design (using paper and pencil) rather than coding (which should be done at the end). Only the Tastier.ATG file should be modified.
+
+Note: This exercise will not be graded, but please submit (using Blackboard) a brief report along with your modified version of the file Tastier.ATG — this should be done before 10:00pm next Monday (23rd October).

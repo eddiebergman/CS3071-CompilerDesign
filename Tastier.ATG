@@ -64,8 +64,29 @@ Expr<out int reg,        // load value of Expr into register
                             }
                             else SemErr("incompatible types");
                          .)
-   ]                     (. gen.ClearRegisters(); .)
+    [
+      TernaryOp<out reg, out type>
+    ]
+  ]                       (. gen.ClearRegisters(); .)
+      
 .
+
+/*-------------------------------------------------------------------------------------------*/
+TernaryOp<out int reg,  //Loads value of ? x : y int register based on last RelOp
+          out int type>   (. int l1, l2; .)
+=
+  '?'                      (. 
+                            gen.ClearRegisters(); 
+                            l1 = gen.NewLabel(); 
+                            l2 = gen.NewLabel();
+                          .)
+                          (. gen.BranchFalse(l1);.)
+  Expr<out reg, out type> (. gen.Branch(l2); .)
+  ':'                     (. gen.Label(l1); .)
+  Expr<out reg, out type> (.  .) 
+                          (. gen.Label(l2); .)
+.
+
 
 /*-------------------------------------------------------------------------------------------*/
 
@@ -227,6 +248,7 @@ Stat                     (. int type; string name; Obj obj; int reg; .)
                                if (obj.level == 0)
                                   gen.StoreGlobal(reg, obj.adr, name);
                                else gen.StoreLocal(reg, tab.curLevel-obj.level, obj.adr, name);
+                            else SemErr("type mismatch");
                          .)
   | '(' ')' ';'          (.
                             if (obj.kind == proc)
