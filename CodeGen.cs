@@ -143,7 +143,7 @@ public class CodeGenerator {
 
 // method to generate ARM assembly laguage code to load local variable's value
    public void LoadLocalValue(int register, string name) {
-      Console.WriteLine("    LDR     R{0}, [R2]        ; {1}", register, name);
+      Console.WriteLine("    LDR     R{0}, [R2]        ; Load {1}", register, name);
    }
 
 // method to generate ARM assembly laguage code to load local variable
@@ -154,7 +154,7 @@ public class CodeGenerator {
 
 // method to generate ARM assembly laguage code to store local variable's value
    public void StoreLocalValue(int register, string name) {
-      Console.WriteLine("    STR     R{0}, [R2]        ; {1}", register, name);
+      Console.WriteLine("    STR     R{0}, [R2]        ; Store in {1}", register, name);
    }
 
 // method to generate ARM assembly laguage code to store local variable

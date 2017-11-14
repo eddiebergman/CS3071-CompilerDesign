@@ -1,14 +1,16 @@
+using System.Collections.Generic;
+
 COMPILER Tastier
 
-   const int // object kinds
-      var = 0, proc = 1;
+  const int // object kinds
+      var = 0, proc = 1, scope = 2, constant = 3, array = 4;
 
-   const int // types
+  const int // types
       undef = 0, integer = 1, boolean = 2;
 
-   public SymbolTable tab;
-   public CodeGenerator gen;
-  
+  public SymbolTable tab;
+  public CodeGenerator gen;
+
 /*-------------------------------------------------------------------------------------------*/
 
 CHARACTERS
@@ -68,22 +70,22 @@ Expr<out int reg,        // load value of Expr into register
       TernaryOp<out reg, out type>
     ]
   ]                       (. gen.ClearRegisters(); .)
-      
+
 .
 
 /*-------------------------------------------------------------------------------------------*/
 TernaryOp<out int reg,  //Loads value of ? x : y int register based on last RelOp
           out int type>   (. int l1, l2; .)
 =
-  '?'                      (. 
-                            gen.ClearRegisters(); 
-                            l1 = gen.NewLabel(); 
+  '?'                      (.
+                            gen.ClearRegisters();
+                            l1 = gen.NewLabel();
                             l2 = gen.NewLabel();
                           .)
                           (. gen.BranchFalse(l1);.)
   Expr<out reg, out type> (. gen.Branch(l2); .)
   ':'                     (. gen.Label(l1); .)
-  Expr<out reg, out type> (.  .) 
+  Expr<out reg, out type> (.  .)
                           (. gen.Label(l2); .)
 .
 
@@ -95,19 +97,40 @@ Primary<out int reg,     // load Primary into register
 =                        (.
                             type = undef;
                             reg = gen.GetRegister();
+                            int indexReg = gen.GetRegister();
                          .)
-  ( Ident<out name>      (.
-                            obj = tab.Find(name); type = obj.type;
-                            if (obj.kind == var) {
-                               if (obj.level == 0)
-                                  gen.LoadGlobal(reg, obj.adr, name);
-                               else
-                                  gen.LoadLocal(reg, tab.curLevel-obj.level, obj.adr, name);
-                               if (type == boolean)
-                               // reset Z flag in CPSR
-                                  gen.ResetZ(reg);
+  ( Ident<out name>      (. obj = tab.Find(name);
+                            type = obj.type;
+                            bool arraySyntax = false;
+                          .)
+    [
+      ArrayIndex<name,
+        out indexReg>     (. arraySyntax = true; .)
+    ]
+                          (.
+                            if(!arraySyntax){  //var const stuff
+                              if (obj.kind == var || obj.kind == constant) {
+                                type = obj.type;
+                                if (obj.level == 0)
+                                    gen.LoadGlobal(reg, obj.adr, name);
+                                else
+                                    gen.LoadLocal(reg, tab.curLevel-obj.level, obj.adr, name);
+                                if (type == boolean)
+                                // reset Z flag in CPSR
+                                    gen.ResetZ(reg);
+                              }
+                              else SemErr("variable expected");
+                            }else{
+                              //indexReg will hold array index
+                              if(obj.kind == array){
+                                type = obj.type;
+                                if(obj.level == 0){
+                                  gen.LoadIndexedGlobal(reg, obj.adr, indexReg, name);
+                                }else{
+                                  gen.LoadIndexedLocal(reg,tab.curLevel-obj.level, obj.adr, indexReg, name);
+                                }
+                              }else SemErr("Can only Index into array");
                             }
-                            else SemErr("variable expected");
                          .)
 
   | number               (.
@@ -133,7 +156,6 @@ Primary<out int reg,     // load Primary into register
                                type = boolean;
                                gen.LoadFalse(reg);
                          .)
-
   | '('
     Expr<out reg,
          out type>
@@ -167,10 +189,10 @@ MulOp<out Op op>
 /*-------------------------------------------------------------------------------------------*/
 
 ProcDecl<string progName>
-                         (. Obj obj; string procName; .)
-= "void"
+                         (. string procName; .)
+= "void"                 (. tab.programName = progName; .)
   Ident<out procName>    (.
-                            obj = tab.NewObj(procName, proc, undef);
+                            tab.NewObj(procName, proc, undef);
                             if (procName == "main")
                                if (tab.curLevel == 0)
                                   tab.mainPresent = true;
@@ -179,12 +201,8 @@ ProcDecl<string progName>
                          .)
   '(' ')'
   '{'
-     {
-     VarDecl
-     }
-     {
-     ProcDecl<progName>
-     }                   (.
+     { (VarDecl | ConstDecl) }
+      { ProcDecl<progName>}   (.
                             if (procName == "main")
                                gen.Label("Main", "Body");
                             else {
@@ -217,7 +235,6 @@ RelOp<out Op op>
   | ">="                 (. op = Op.GEQ; .)
   )
 .
-
 /*-------------------------------------------------------------------------------------------*/
 
 SimExpr<out int reg,     //load value of SimExpr into register
@@ -240,7 +257,7 @@ Stat                     (. int type; string name; Obj obj; int reg; .)
 = Ident<out name>        (. obj = tab.Find(name); .)
   ( ":="                 (.
                             if (obj.kind != var)
-                               SemErr("cannot assign to procedure");
+                               SemErr("can only assign to a variable");
                          .)
     Expr<out reg,
          out type> ';'   (.
@@ -250,17 +267,45 @@ Stat                     (. int type; string name; Obj obj; int reg; .)
                                else gen.StoreLocal(reg, tab.curLevel-obj.level, obj.adr, name);
                             else SemErr("type mismatch");
                          .)
+
   | '(' ')' ';'          (.
                             if (obj.kind == proc)
                                gen.Call(name);
                             else SemErr("object is not a procedure");
                          .)
+
+
+  | ArrayIndex<name, out reg> (.  Console.WriteLine(";Store index on stack as is only safe place"
+                                     + "while Expr is being evaluated");
+                                  gen.StoreLocal(reg, 0
+                                    ,tab.topScope.nextAdr++, "top of Stack"); //push to Stack
+                              .)
+    ":="
+    Expr<out reg, out type>   (.
+                                  obj = tab.Find(name);
+                                  int exprReg = gen.GetRegister();
+                                  int indexReg = gen.GetRegister();
+                                  gen.MoveRegister(exprReg, reg);
+                                  gen.LoadLocal(indexReg, 0
+                                    , --tab.topScope.nextAdr, "top of Stack"); //pop from Stack
+                                  //indexReg will hold array index
+                                  if(obj.kind == array){
+                                    if(type != obj.type)
+                                      SemErr("Type mismatch");
+                                    if(obj.level == 0){
+                                      gen.StoreIndexedGlobal(exprReg, obj.adr, indexReg, name);
+                                    }else{
+                                      gen.StoreIndexedLocal(exprReg,tab.curLevel-obj.level, obj.adr, indexReg, name);
+                                    }
+                                  }else SemErr("Can only Index into array");
+                                .)
+    ';'
   )
 
 | "if"                   (. int l1, l2; l1 = 0; .)
   Expr<out reg,
        out type>         (.
-                            if (type == boolean) {
+                               if (type == boolean) {
                                l1 = gen.NewLabel();
                                gen.BranchFalse(l1);
                             }
@@ -297,7 +342,7 @@ Stat                     (. int type; string name; Obj obj; int reg; .)
   Ident<out name> ';'    (.
                             obj = tab.Find(name);
                             if (obj.type == integer) {
-                               gen.ReadInteger(); 
+                               gen.ReadInteger();
                                if (obj.level == 0)
                                   gen.StoreGlobal(0, obj.adr, name);
                                else gen.StoreLocal(0, tab.curLevel-obj.level, obj.adr, name);
@@ -311,7 +356,7 @@ Stat                     (. int type; string name; Obj obj; int reg; .)
          out type>       (.
                             switch (type) {
                                case integer: gen.WriteInteger(reg, false);
-                                             break; 
+                                             break;
                                case boolean: gen.WriteBoolean(false);
                                              break;
                             }
@@ -334,7 +379,7 @@ Stat                     (. int type; string name; Obj obj; int reg; .)
   ';'
 
 | '{'                      (. tab.OpenSubScope(); .)
-  { VarDecl }
+  { (VarDecl | ConstDecl) }
   Stat { Stat }
   '}'                      (. tab.CloseSubScope(); .)
 .
@@ -345,7 +390,7 @@ Tastier                  (. string progName; .)
   = "program"
   Ident<out progName>    (. tab.OpenScope(); .)
   '{'
-    { VarDecl }          // global variables
+    { (VarDecl | ConstDecl) }          // global variables
     { ProcDecl<progName> }
                          (. tab.CloseScope(); .)
   '}'
@@ -360,14 +405,14 @@ Term<out int reg,        // load value of Term into register
   { MulOp<out op>
     Primary<out regR,
             out typeR>
-                         (.
+                          (.
                             if (type == integer && typeR == integer)
                                gen.MulOp(op, reg, regR);
                             else SemErr("integer type expected");
                          .)
   }
-.
 
+.
 /*-------------------------------------------------------------------------------------------*/
 
 Type<out int type>
@@ -376,15 +421,171 @@ Type<out int type>
  | "bool"                (. type = boolean; .)
  )
 .
+/*-------------------------------------------------------------------------------------------*/
+ConstDecl                 (.  string name; int type, typeR; int reg; int value; .)
+=
+  "const"                 (.  type = undef; typeR = undef; .)
+  Type<out type>          (.  reg = gen.GetRegister(); .)
+  Ident<out name>         (.  Obj obj = tab.NewObj(name, constant, type); .)
+  "="
+  ConstExpr<out typeR, out value>
+                          (.
+                              if(type == typeR)
+                              {
+                                obj.compileTimeValue = value;
+                                gen.LoadConstant(reg, value);
+                                if (obj.level == 0)
+                                  gen.StoreGlobal(reg, obj.adr, name);
+                                else
+                                  gen.StoreLocal(reg, tab.curLevel-obj.level, obj.adr, name);
+                              }
+                              else SemErr("Type Mismatch");
+                          .)
 
+  ";"                     (.  gen.ClearRegisters(); .)
+
+.
 /*-------------------------------------------------------------------------------------------*/
 
-VarDecl                  (. string name; int type; .)
-= Type<out type>
-  Ident<out name>        (. tab.NewObj(name, var, type); .)
-  { ","
-    Ident<out name>      (. tab.NewObj(name, var, type); .)
-  } ";"
+VarDecl                  (.string name; int type; .)
+=
+    Type<out type>
+    Ident<out name>         (. tab.NewObj(name, var, type); .)
+    [ ArrayDecl<name> ]
+
+    { "," Ident<out name>   (. tab.NewObj(name, var, type); .)
+      [ ArrayDecl<name>]
+    }
+    ";"
+
+.
+
+/*-------------------------------------------------------------------------------------------*/
+ArrayDecl<string name>                    (.  int type; int value = -1; .)
+=                                         (.  Obj arr = tab.Find(name);
+                                              arr.kind = array;
+                                              List<int> dimensions = new List<int>();
+                                          .)
+     "[" ConstExpr<out type, out value>  "]"
+                                          (.
+                                              if(type == integer && value > 0)
+                                                dimensions.Add(value);
+                                              else
+                                                SemErr("Array size must be integer > 0");
+                                          .)
+      {
+        "[" ConstExpr<out type, out value> "]"
+                                          (.
+                                            if(type == integer && value > 0)
+                                              dimensions.Add(value);
+                                            else
+                                              SemErr("Array size must be integer > 0");
+                                          .)
+      }
+                                          (.
+                                            int spaceRequired = 1;
+                                            foreach(int dimensionSize in dimensions)
+                                              spaceRequired *= dimensionSize;
+                                            arr.dimensions = dimensions.ToArray();
+                                            tab.topScope.nextAdr += spaceRequired;
+                                          .)
+.
+
+/*-------------------------------------------------------------------------------------------*/
+ConstExpr<out int type, out int value>
+=                         (.  string name; type = undef; value = -1; .)
+  (
+    number                (.  type = integer; value = Convert.ToInt32(t.val); .)
+    | '-'number           (.  type = integer; value = -(Convert.ToInt32(t.val)); .)
+    | "true"              (.  type = boolean; value = 1; .)
+    | "false"             (.  type = boolean; value = 0; .)
+    | Ident<out name>     (.  Obj obj = tab.Find(name);
+                              if(obj.kind == constant){
+                                type = obj.type;
+                                value = obj.compileTimeValue;
+                              }
+                              else SemErr("Must be constant");
+                          .)
+
+  )
+.
+/*-------------------------------------------------------------------------------------------*/
+ArrayIndex<string name
+      ,out int reg>                   (.  int type;
+                                          int accReg = 3;
+                                          int dCount = 0;
+                                          reg = gen.GetRegister();
+                                      .)
+=                                     (.  Obj arr = tab.Find(name); .)
+    "[" Expr<out reg, out type> "]"   (.
+                                          int exprReg = gen.GetRegister();
+                                          int boundReg = gen.GetRegister();
+                                          int compareReg = gen.GetRegister();
+                                          gen.MoveRegister(exprReg, reg);
+                                          if(type == integer){
+                                            int l1 = gen.NewLabel();
+                                            int l2 = gen.NewLabel();
+                                            Console.WriteLine(";Bound check begin");
+                                            gen.MoveRegister(compareReg, exprReg);
+                                            gen.LoadConstant(boundReg, 0);
+                                            gen.RelOp(Op.GEQ, compareReg, boundReg);
+                                            gen.BranchFalse(l2);
+
+                                            gen.LoadConstant(boundReg, arr.dimensions[dCount++]);
+                                            gen.RelOp(Op.LSS, compareReg, boundReg);
+                                            gen.BranchFalse(l2);
+
+                                            gen.BranchTrue(l1);
+
+                                            gen.Label(l2);
+                                            gen.WriteString("index must be between 0 & ");
+                                            gen.WriteInteger(boundReg, true);
+                                            gen.StopProgram(tab.programName);
+                                            Console.WriteLine(";Bound check end");
+                                            gen.Label(l1);
+                                            gen.MoveRegister(accReg, exprReg);
+                                          }
+                                        else SemErr("Array index must be an integer");
+                                      .)
+  {
+    "[" Expr<out reg, out type> "]"   (.
+                                        gen.MoveRegister(exprReg, reg);
+                                        if(dCount + 1 > arr.dimensions.Length){
+                                          SemErr("Specifying too many indices, " + arr.name
+                                            + " has only " + arr.dimensions.Length + " dimenensions" );
+                                        }else if(type == integer){
+                                          int l1 = gen.NewLabel();
+                                          int l2 = gen.NewLabel();
+                                          Console.WriteLine(";Bound check begin");
+                                          gen.MoveRegister(compareReg, exprReg);
+                                          gen.LoadConstant(boundReg, 0);
+                                          gen.RelOp(Op.GEQ, compareReg, boundReg);
+                                          gen.BranchFalse(l2);
+
+                                          gen.LoadConstant(boundReg, arr.dimensions[dCount++]);
+                                          gen.RelOp(Op.LSS, compareReg, boundReg);
+                                          gen.BranchFalse(l2);
+
+                                          gen.BranchTrue(l1);
+
+                                          gen.Label(l2);
+                                          gen.WriteString("index must be between 0 & ");
+                                          gen.WriteInteger(boundReg, true);
+                                          gen.StopProgram(tab.programName);
+
+                                          Console.WriteLine(";Bound check end");
+                                          gen.Label(l1);
+                                          gen.MulOp(Op.MUL, accReg, boundReg);
+                                          gen.AddOp(Op.ADD, accReg, exprReg);
+                                        }else SemErr("Array index must be an integer");
+                                      .)
+  }                                   (.
+                                          if(dCount != arr.dimensions.Length)
+                                            SemErr("Must specifiy all " + arr.dimensions.Length
+                                              + " indices in array \'" + arr.name + '\'');
+                                          else
+                                            gen.MoveRegister(reg, accReg);
+                                      .)
 .
 
 END Tastier.

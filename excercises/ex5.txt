@@ -1,0 +1,10 @@
+Extend the programming language described by the attributed translation grammar for Tastier to include the definition and use of named scalar constants of the form:
+const limit = 512; // example constant definition
+and add support for the declaration and use of one and two dimensional arrays of scalar values of the form:
+int vector[1..limit]; int matrix[1..32, 1..1024]; // example variable declarations
+vector[i+1] := a+b/c-d; i := matrix[j,k+1]*2; // examples of the use of such variables
+
+Note:
+    i. A constant has a value—once set it can be accessed in an expression by name, but its value cannot be changed (hence the use of the "=" operator rather than ":=").
+   ii. For variable arrays the bounds should be specified by integer literals (for example "1"), or by named integer constant values (for example "maxsize").
+
