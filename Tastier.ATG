@@ -382,6 +382,8 @@ Stat                     (. int type; string name; Obj obj; int reg; .)
   { (VarDecl | ConstDecl) }
   Stat { Stat }
   '}'                      (. tab.CloseSubScope(); .)
+
+| Switch
 .
 
 /*-------------------------------------------------------------------------------------------*/
@@ -586,6 +588,86 @@ ArrayIndex<string name
                                           else
                                             gen.MoveRegister(reg, accReg);
                                       .)
+.
+
+/*-------------------------------------------------------------------------------------------*/
+Switch                                (.  string name; int reg, oReg, cReg; int type;
+                                          int caseLabel, statementLabel; 
+                                          int endLabel = gen.NewLabel();                                        
+                                      .)
+=
+"switch" Ident<out name>              (.  Obj obj = tab.Find(name); .) 
+'{'
+                                      //Primary could overwrite R3, R5 -> Rmax as primary can have Expr
+                                      //so we load in the obj each time we do a case
+  {                                   (.                                           
+                                          //make branch for this specific caseP
+                                          caseLabel = gen.NewLabel();
+                                          gen.Label(caseLabel);
+
+                                          Console.WriteLine(";Load in the Case primary");
+                                      .)
+    "case"                            
+    Primary<out reg, out type> ':'    (.  //generate registers to hold obj and case val
+                                          gen.ClearRegisters();
+                                          oReg = gen.GetRegister();
+                                          cReg = gen.GetRegister();
+
+                                          //move generated primary value to cReg
+                                          gen.MoveRegister(cReg, reg); 
+                                          
+                                          //load obj value into oReg
+                                          Console.WriteLine(";Load in Switch obj ");
+                                          if (obj.level == 0)
+                                            gen.LoadGlobal(oReg, obj.adr, name);
+                                          else
+                                            gen.LoadLocal(oReg, tab.curLevel-obj.level, obj.adr, name);
+                                        
+
+                                          if(type != obj.type) 
+                                            SemErr("Yo, don't mix n' match the types");
+
+                                          //Compare oReg to cReg
+                                          Console.WriteLine(";Comapare Switch obj with Case primary");
+                                          gen.RelOp(Op.EQU, oReg, cReg);
+                                          gen.BranchFalse(caseLabel + 2); //jump to next case, +2 to skip statementLabel
+                                          //Gen statement labels so optional break can skip the comparisons
+
+                                          statementLabel = gen.NewLabel();
+                                          gen.Label(statementLabel);
+                                          
+                                          //....statements
+                                      .)
+    { Stat }
+    [                                     //if break exists, jump to end
+                                      (.  Console.WriteLine(";Break: Jump to end of Switch statement"); .)
+      "break" ';'                        (.  gen.Branch(endLabel); .)
+    ]                                   
+                                      //else, we will branch to the next set of statements
+                                      //+2 to skip the caseLabel
+                                      (.  Console.WriteLine(";Jump to next set of statements"); .)
+                                      (.  gen.Branch(statementLabel + 2); .)
+  }                                   
+                                      (.
+                                          //Default or no, these labels are required so the last case can have an
+                                          //optional break, gen.Branch(statementLabel + 2) will jump to the below
+                                          //statement label, correctly making it run onto default if present or else
+                                          //it will run out into the end of the program
+                                          
+                                          Console.WriteLine(";Default labels whether default present or not");                                      
+                                          caseLabel = gen.NewLabel();
+                                          gen.Label(caseLabel);
+                                          statementLabel = gen.NewLabel();
+                                          gen.Label(statementLabel);
+                                      .)
+  [
+    "default"':'  
+    { Stat }
+    [ "break" ';' ]
+  ]
+'}'                                     (. 
+                                            gen.Label(endLabel); 
+                                        .)
 .
 
 END Tastier.

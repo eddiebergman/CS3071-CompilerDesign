@@ -1,33 +1,42 @@
-// Tests various new features added to the Tastier Language
+//Tests the new functionality of the 'switch' statement 
 
 program Test {
-   const int bufferSize = 100;
-   int i, count, total;
-   int buffer[bufferSize];
 
-  void dummy(){
-    int arr[10][10][10];
-    i := 10;
-    arr[3][4][5] := arr[2+3][3 < 4? 4 : 3][i - 7];
-  }
-
-  void dummy2(){
-    const int size = 10;
-    int sum;
-    int arr[size];
-    i := 0;
-    sum := 0;
-    while i < size {
-      arr[i] := i;
-      sum := sum + arr[i];
+  void make3(){
+    int c;
+    c := 0;
+    switch c {
+      case 0: 
+        c++;
+      case 1:
+        c++;
+      case 2:
+        c++;
+        break;
+      default:
+        c := 3;
     }
   }
 
    void main() {
-      const int constTest = bufferSize;
-      const bool myBool = false;
-      bool b;
-      dummy();
-      b := myBool;
+     int b; 
+     b := 3;
+
+      switch b {
+        case 0:
+          b := b + 3;
+          break;
+        case 1: 
+          b := b + 2;
+          break;
+        case 2: 
+          b := b + 1;
+          break;
+        default:
+          b := 0;
+          break;
+      }
+
+      make3();
    }
 }

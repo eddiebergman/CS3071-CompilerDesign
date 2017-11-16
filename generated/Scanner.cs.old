@@ -229,8 +229,8 @@ public class UTF8Buffer: Buffer {
 public class Scanner {
 	const char EOL = '\n';
 	const int eofSym = 0; /* pdt */
-	const int maxT = 41;
-	const int noSym = 41;
+	const int maxT = 45;
+	const int noSym = 45;
 
 
 	public Buffer buffer; // scanner buffer
@@ -402,6 +402,10 @@ public class Scanner {
 			case "int": t.kind = 35; break;
 			case "bool": t.kind = 36; break;
 			case "const": t.kind = 37; break;
+			case "switch": t.kind = 41; break;
+			case "case": t.kind = 42; break;
+			case "break": t.kind = 43; break;
+			case "default": t.kind = 44; break;
 			default: break;
 		}
 	}

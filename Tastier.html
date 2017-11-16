@@ -164,6 +164,22 @@
     <span class="s1">ArrayIndex =
       <span class="Apple-converted-space">      </span>'[' Expr ']' { '[' Expr ']' }</span>
   </p>
+  <p class="p2">
+    <span class="s1">Switch =
+      <span class="Apple-converted-space">      </span>
+        'switch' Ident ‘{‘ 
+        { 
+        'case' Primary ':' 
+          { Stat } 
+          [ 'break' ';' ] 
+        }
+        [ 
+        'default' ':'
+          { Stat }
+          [ 'break' ';']
+        ]
+      '}'</span>
+  </p>
 
 </body>
 

@@ -1,0 +1,3 @@
+Extend the programming language described by the attributed translation grammar for Tastier to include some form of switch (or case) statement.
+ 
+Your report should describe in detail the reason behind your choice of syntax and semantics for this statement with particular emphasis surrounding the issue of break and fall through, etc. Please submit the report, the modified version of the Tastier.ATG file and a new test program using Blackboard by no later than 10:00pm on Friday evening, 24th November. In this instance, 40% of the marks available will be allocated to the quality of your report.
