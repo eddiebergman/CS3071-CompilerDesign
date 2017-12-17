@@ -3,7 +3,7 @@ CSHARPCOMPILER = dmcs
 build: Tastier.ATG
 	mkdir -p generated
 	mono Coco.exe -o generated -namespace Tastier Tastier.ATG
-	$(CSHARPCOMPILER) Tastier.cs CodeGen.cs SymTab.cs generated/*.cs -out:tcc.exe
+	$(CSHARPCOMPILER) Tastier.cs StructDef.cs CodeGen.cs SymTab.cs Type.cs generated/*.cs -out:tcc.exe
 
 compile: build
 	rm -f TastierProject.s

@@ -1,0 +1,18 @@
+did for loop
+
+BreakStat, used inconjuction with Subscopes, openscope with a label that should be placed before subscope is closed
+made it a stat
+checks if it's in correct place
+redid other statments to incorporate it (switch)
+
+moved declarations to statements
+moved everything to Stat, makes program a lot more flexible.
+
+arrayDecl now just calculates dimensional info
+moved arrayConstruction properly to symbol table
+
+redo type system
+Now a class to represent a type and associated information
+
+create struct prod rule in ATG
+int nextType for keeping key for different types available

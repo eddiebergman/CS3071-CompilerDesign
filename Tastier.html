@@ -8,13 +8,16 @@
   <meta name="Generator" content="Cocoa HTML Writer">
   <meta name="CocoaVersion" content="1404.47">
   <style type="text/css">
-    p.p2 {
+    p{
       margin: 0.0px 0.0px 0.0px 0.0px;
-      line-height: 14.0px;
+      line-height: 20.0px;
       font: 12.0px Courier;
       color: #000000;
       -webkit-text-stroke: #000000
     }
+
+    tab{ padding-left: 2em; }
+    tab2{ padding-left: 4em; }
 
     span.s1 {
       font-kerning: none
@@ -33,154 +36,119 @@
       <b>Tastier Grammar</b>
     </span>
   </h2>
-  <p class="p2">
-    <span class="s1">Tastier =
-      <span class="Apple-converted-space">    </span>"program" ident "{" {VarDecl | ConstDecl} {ProcDecl} "}"</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <br>
+  <p>
+    <h3>Leaf Like Productions</h3>
+    <br>
+    <span>Ident = ident</span>
+    <br>
+    <br>
+    <span>String = string</span>
+    <br>
+    <br>
+    <span>AddOp = ( '+' | '-' )</span>
+    <br><br>
+    <span>MulOp = ( '*' | ("div" | "DIV") | ("mod" | "MOD") )</span>
+    <br><br>
+    <span>RelOp =   ( "=" | '<' | '>' | "!=" | "<=" | ">=")</span>
+    <br><br>
+    <span>Type
+        =                      
+         ( "int"                 
+         | "bool"               
+         | "struct"             
+            Ident )</span>
+    <br><br>
+    <span>Primary = (Ident [ArrayIndex] | '-' Primary | number | "true" | "false" | '(' Expr ')' )</span>
+    <br><br>
+    <span>Term = Primary { MulOp Primary }</span>
+    <br><br>
+    <span>SimExpr = Term { AddOp Term }</span>
+    <br><br>
+    <span>Expr = SimExpr [ RelOp  SimExpr [ TernaryOp ]]</span>
+    <br><br>
+    <span>TernaryOp = '?' Expr ':' Expr</span>
+    <br><br>
+    <span>ConstExpr = ( number | '-' number | "true" | "false" | Ident )</span>
+    <br><br><br>
+    <h3>Declarative Productions</h3>
+    <br>
+    <span>VarDecl = Type Ident [ArrayDecl] {',' Ident [ArrayDecl] }</span>
+    <br><br>
+    <span>StructDecl = <br><tab>"def" "struct" Ident '{' <br><tab2> { Type Ident { ',' Ident } ';' <br><tab>'}'</span>
+    <br><br>
+    <span>ProcDecl = "void" Ident '(' ')' '{'  { Stat }  '}'</span>
+    <br><br>
+    <span>ConstDecl = "const" Type Ident '=' ConstExpr ';'</span>
+    <br><br>
+    <span>ArrayDecl = '[' ConstExpr ']' { '[' ConstExpr ']' }</span>
+    <br><br>
+    <h3>Helpful Productions</h3>
+    <br>
+    <span>VarAssignment = ":=" Expr ';'</span>
+    <br><br>
+    <span>ArrayAssignment = ":=" Expr ';'</span>
+    <br><br>
+    <span>StructField = '.' Ident</span>
+    <br><br>
+    <span>ProcCall = '(' ')' ';'</span>
+    <br><br>
+    <h3>Simple Statments</h3>
+    <br>
+    <span>ReadStat = "read" Ident ';'</span>
+    <br><br>
+    <span>WriteStat = "write" ( Expr | String ) ';'</span>
+    <br><br>
+    <span>WriteLnStat = "writeln" Expr ';'</span>
+    <br><br>
+    <h3>Complex Statements (Control structures)</h3>
+    <br>
+    <span>IfStat = "if" Expr Stat [ "else" Stat]</span>
+    <br><br>
+    <span>WhileStat = "while" Expr '{' { Stat } '}'</span>
+    <br><br>
+    <span>ScopeStat = '{' { Stat } '}'</span>
+    <br><br>
+    <span>SwitchStat =<br><tab>"switch" Ident { StructField } '{'<br><tab2>{ "case" Primary ':'<br><tab2><tab>{ Stat }<br><tab2>}
+        <br><tab2>[ "default" ':' <br><tab><tab2>{ Stat } <br><tab2> ] <br><tab> '}'
     </span>
-  </p>
-  <p class="p2">
-    <span class="s1">VarDecl =
-      <span class="Apple-converted-space">    </span>Type ident [ ArrayDecl ] {"," ident [ ArrayDecl ] } ";"</span>
-  </p>
-  <p class="p2">
-    <span class="s1">ProcDecl =
-      <span class="Apple-converted-space">  </span>"void" ident "(" ")"</span>
-  </p>
-  <p class="p2">
-    <span class="s2">
-      <span class="Apple-converted-space">             </span>
+    <br><br>
+    <span>ForStat = <br><tab>'(' [ Ident {StructField} VarAssignment ] [ Expr ';' ] [ Simple Stat ] ')' '{'
+      <br><tab2>{ Stat } 
+          <br><tab>'}'
     </span>
-    <span class="s1">"{" {VarDecl | ConstDecl } {ProcDecl} Stat {Stat} "}"</span>
+    <br><br>
+    <span>BreakStat = "break" ';'</span>
+    <br>
+    <h3>Program Structures</h3>
+    <br>
+    <span>Stat = ( ComplexStat | SimpleStat)</span>
+    <br><br>
+    <span>ComplexStat     
+        =
+        ( 
+          SwitchStat 
+          | IfStat 
+          | WhileStat 
+          | ScopeStat 
+          | ForStat
+          | BreakStat
+          | VarDecl
+          | ConstDecl
+          | StructDecl
+        )</span>
+      <br><br>
+      <span>SimpleStat              
+          =
+          (
+            <br><tab>Ident { StructField } ( VarAssignment| ArrayIndex ArrayAssignment | ProcCall )
+            <br><tab>| ReadStat
+            <br><tab>| WriteStat
+            <br><tab>| WriteLnStat
+          <br>)
+      </span>
+      <br><br>
+      <span>Tastier = "program" Ident '{' { (VarDecl | ConstDecl) } { ProcDecl } '}'</span>
   </p>
-  <p class="p2">
-    <span class="s1">
-      <br>
-    </span>
-  </p>
-  <p class="p2">
-    <span class="s1">Type =
-      <span class="Apple-converted-space">      </span>"int" | "bool"</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <br>
-    </span>
-  </p>
-  <p class="p2">
-    <span class="s1">Stat =
-      <span class="Apple-converted-space">      </span>ident (":=" Expr ";" | "(" ")" ";" | ArrayIndex ":=" Expr ';' ')</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <span class="Apple-converted-space">           </span>| "if" Expr Stat ["else" Stat]</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <span class="Apple-converted-space">           </span>| "while Expr Stat</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <span class="Apple-converted-space">           </span>| "read" ident ";"</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <span class="Apple-converted-space">           </span>| "write" Expr | string ";"</span>
-  </p>
-  <p class="p2">
-    <span class="s2">
-      <span class="Apple-converted-space">           </span>| </span>
-    <span class="s1">"writeln" Expr ";"</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <span class="Apple-converted-space">           </span>| "{" {VarDecl} Stat {Stat} ”}”</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <br>
-    </span>
-  </p>
-  <p class="p2">
-    <span class="s1">Expr =
-      <span class="Apple-converted-space">      </span>SimExpr [RelOp SimExpr [ TernaryOp ]]</span>
-  </p>
-  <p class="p2">
-    <span class="s1">SimExpr =
-      <span class="Apple-converted-space">    </span>Term {AddOp Term}</span>
-  </p>
-  <p class="p2">
-    <span class="s1">Term =
-      <span class="Apple-converted-space">      </span>Primary {MulOp Primary}</span>
-  </p>
-  <p class="p2">
-    <span class="s1">Primary =
-      <span class="Apple-converted-space"></span> (ident [ ArrayIndex ] | number | "-" Primary
-      <span class="Apple-converted-space"> </span>
-    </span>
-  </p>
-  <p class="p2">
-    <span class="s2">
-      <span class="Apple-converted-space">             </span>| </span>
-    <span class="s1">"true" | "false" | "(" Expr ")")</span>
-  </p>
-  <p class="p2">
-    <span class="s1">
-      <br>
-    </span>
-  </p>
-  <p class="p2">
-    <span class="s1">AddOp =
-      <span class="Apple-converted-space">      </span>"+" | "-"</span>
-  </p>
-  <p class="p2">
-    <span class="s1">MulOp =
-      <span class="Apple-converted-space">      </span>"*" | "div" | "DIV" | "mod" | "MOD"</span>
-  </p>
-  <p class="p2">
-    <span class="s1">RelOp =
-      <span class="Apple-converted-space">      </span>"=" | "&lt;" | "&gt;" | "|=" | "&lt;=" | "&gt;="</span>
-  </p>
-  <p class="p2">
-    <span class="s1">TernaryOp =
-      <span class="Apple-converted-space">      </span>'?' Expr ':' Expr</span>
-  </p>
-  <p class="p2">
-    <span class="s1">ConstDecl =
-      <span class="Apple-converted-space">      </span>"const" Type Ident "=" ConstExpr</span>
-  </p>
-  <p class="p2">
-    <span class="s1">ArrayDecl =
-      <span class="Apple-converted-space">      </span>'[' ConstExpr ']' { '[' ConstExpr ']' }</span>
-  </p>
-  <p class="p2">
-    <span class="s1">ConstExpr =
-      <span class="Apple-converted-space">      </span>(number | '-'number | "true" | "false" | Ident)</span>
-  </p>
-  <p class="p2">
-    <span class="s1">ArrayIndex =
-      <span class="Apple-converted-space">      </span>'[' Expr ']' { '[' Expr ']' }</span>
-  </p>
-  <p class="p2">
-    <span class="s1">Switch =
-      <span class="Apple-converted-space">      </span>
-        'switch' Ident ‘{‘ 
-        { 
-        'case' Primary ':' 
-          { Stat } 
-          [ 'break' ';' ] 
-        }
-        [ 
-        'default' ':'
-          { Stat }
-          [ 'break' ';']
-        ]
-      '}'</span>
-  </p>
-
 </body>
 
 </html>

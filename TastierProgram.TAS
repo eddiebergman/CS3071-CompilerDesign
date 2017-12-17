@@ -1,42 +1,39 @@
-//Tests the new functionality of the 'switch' statement 
+//Tests the new functionality of the 'structs' and 'for loop' statements
+//Also generates code to do runtime array checking 
+//Check generated .s code to get better look at how things are laid in memery / where runtime checking is done
 
 program Test {
 
-  void make3(){
-    int c;
-    c := 0;
-    switch c {
-      case 0: 
-        c++;
-      case 1:
-        c++;
-      case 2:
-        c++;
-        break;
-      default:
-        c := 3;
+  const int single = 1;
+  
+  void main() {
+
+    def struct Foo{
+      int v;
+      bool b;
     }
+
+    def struct Bar{
+      struct Foo lala;
+    }
+
+    struct Foo foo1;
+    struct Foo foo2;
+    struct Bar bar;
+    struct Bar bar2;
+
+    //bar.lala := bar2.lala;
+
+    int pineapples[10];
+
+    for(foo1.v := 9; foo1.v >= 0; foo1.v := foo1.v - single;){
+      bar.lala.v := pineapples[foo1.v];
+      if bar.lala.v = 4
+        break;
+    }
+
   }
 
-   void main() {
-     int b; 
-     b := 3;
 
-      switch b {
-        case 0:
-          b := b + 3;
-          break;
-        case 1: 
-          b := b + 2;
-          break;
-        case 2: 
-          b := b + 1;
-          break;
-        default:
-          b := 0;
-          break;
-      }
 
-      make3();
-   }
 }
